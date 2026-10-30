@@ -1,0 +1,18 @@
+name: mlflow-lab
+
+services:
+  mlflow:
+    image: ghcr.io/mlflow/mlflow:v3.17.2
+    command: >
+      mlflow server --host 0.0.0.0 --port 5000
+      --backend-store-uri sqlite:////mlflow/mlflow.db
+      --artifacts-destination /mlflow/artifacts  
+      --serve-artifacts
+      --allowed-hosts "mlflow:5000,localhost:5050,127.0.0.1:5050"
+    ports:
+      - "5050:5000"
+    volumes:
+      - mlflow-data:/mlflow
+
+volumes:
+  mlflow-data:
