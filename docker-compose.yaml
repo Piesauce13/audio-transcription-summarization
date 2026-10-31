@@ -1,4 +1,4 @@
-name: mlflow-lab
+name: meeting-notes-ai
 
 services:
   mlflow:
@@ -6,13 +6,40 @@ services:
     command: >
       mlflow server --host 0.0.0.0 --port 5000
       --backend-store-uri sqlite:////mlflow/mlflow.db
-      --artifacts-destination /mlflow/artifacts  
+      --artifacts-destination /mlflow/artifacts
       --serve-artifacts
       --allowed-hosts "mlflow:5000,localhost:5050,127.0.0.1:5050"
     ports:
       - "5050:5000"
     volumes:
       - mlflow-data:/mlflow
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health')"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  api:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    environment:
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      MODELS_DIR: /models
+      STRICT_MLFLOW: "0"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/models
+    depends_on:
+      mlflow:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 120s
 
 volumes:
   mlflow-data:
